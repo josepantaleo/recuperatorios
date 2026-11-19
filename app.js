@@ -697,28 +697,54 @@
       ? `Tenés ${unanswered} pregunta(s) y ${emptyExercises} ejercicio(s) de código sin completar. ¿Querés entregar igualmente? El docente revisará el examen.`
       : "¿Confirmás la entrega? El intento quedará registrado en este navegador y no podrás modificarlo.";
     if (!window.confirm(confirmText)) return;
+
+    isGrading = true;
     const button = $("gradeBtn");
-    if (button) { button.disabled = true; button.textContent = "REGISTRANDO ENTREGA…"; }
-    const codeAnswersNow = Object.fromEntries(Array.from(document.querySelectorAll(".code-answer"), field => [field.id, field.value]));
-    const automaticCodeScores = assessCodeAnswers(codeAnswersNow);
-    const automaticCodeTotal = Number(automaticCodeScores.reduce((sum, result) => sum + result.score, 0).toFixed(2));
-    const automaticABTotal = calculateABPoints(answers);
-    const automaticGrade = Number((automaticABTotal + automaticCodeTotal).toFixed(2));
-    const attempt = {
-      student, answers: { ...answers }, codeAnswers: codeAnswersNow, autoCodeScores: automaticCodeScores.map(r => r.score), autoCodeFeedback: automaticCodeScores.map(r => r.feedback), autoCodeTotal, autoGrade,
-      date: new Date().toISOString(), version: 9, teacherCodeScores: {}, layout: examLayout,
-      id: `${Date.now()}_${student.lastName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
-    };
+    if (button) { button.disabled = true; button.textContent = "CORRIGIENDO…"; }
+    let attempt;
+    let storageSaved = false;
     try {
-      localStorage.setItem(EXAM_KEY, JSON.stringify(attempt));
-      saveHistory(attempt);
-      localStorage.removeItem(DRAFT_KEY);
-      if ($("storageStatus")) $("storageStatus").textContent = "Entrega registrada en localStorage y en el historial de este navegador.";
+      const codeAnswersNow = Object.fromEntries(Array.from(document.querySelectorAll(".code-answer"), field => [field.id, field.value]));
+      const automaticCodeScores = assessCodeAnswers(codeAnswersNow);
+      const automaticCodeTotal = Number(automaticCodeScores.reduce((sum, result) => sum + result.score, 0).toFixed(2));
+      const automaticABTotal = calculateABPoints(answers);
+      const automaticGrade = Number((automaticABTotal + automaticCodeTotal).toFixed(2));
+      attempt = {
+        student, answers: { ...answers }, codeAnswers: codeAnswersNow,
+        autoCodeScores: automaticCodeScores.map(r => r.score),
+        autoCodeFeedback: automaticCodeScores.map(r => r.feedback),
+        autoCodeTotal: automaticCodeTotal, autoGrade: automaticGrade,
+        date: new Date().toISOString(), version: 10, teacherCodeScores: {}, layout: examLayout,
+        id: `${Date.now()}_${student.lastName.toLowerCase().replace(/[^a-z0-9]+/g, "-" )}`
+      };
+
+      // Guardar el intento principal primero; el historial es secundario y no debe bloquear la corrección.
+      try {
+        localStorage.setItem(EXAM_KEY, JSON.stringify(attempt));
+        storageSaved = true;
+      } catch (storageError) {
+        console.warn("No se pudo persistir el intento principal:", storageError);
+      }
+      try { saveHistory(attempt); } catch (historyError) { console.warn("Error en historial:", historyError); }
+      try { localStorage.removeItem(DRAFT_KEY); } catch {}
+
+      // La pantalla de corrección se presenta aunque el almacenamiento falle.
       showCorrection(attempt.answers, null, attempt.date, attempt);
+      if ($("storageStatus")) {
+        $("storageStatus").textContent = storageSaved
+          ? "Entrega registrada en este navegador. La corrección automática está completa."
+          : "La corrección se realizó, pero el navegador no pudo guardar la entrega. Avisá al docente antes de cerrar.";
+      }
     } catch (error) {
-      console.error("No se pudo guardar la entrega:", error);
-      if (button) { button.disabled = false; button.textContent = "Volver a entregar"; }
-      if ($("gradeMessage")) $("gradeMessage").textContent = "No se pudo guardar la entrega en este navegador. No cierres la página e informá al docente.";
+      console.error("Error durante la corrección/entrega:", error);
+      if (attempt) {
+        try { showCorrection(attempt.answers, null, attempt.date, attempt); examLocked = true; }
+        catch (renderError) { console.error("No se pudo mostrar la corrección:", renderError); }
+      }
+      if ($("gradeMessage")) $("gradeMessage").textContent = "Se produjo un error al finalizar. No cierres la página y avisá al docente.";
+      if (button && !examLocked) { button.disabled = false; button.textContent = "Reintentar finalizar"; }
+    } finally {
+      isGrading = false;
     }
   }
 
