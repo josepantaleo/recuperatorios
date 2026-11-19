@@ -270,11 +270,10 @@
     const abPoints = calculateABPoints(savedAnswers);
     const theoryPoints = Number((theoryCorrect * (2 / theory.length)).toFixed(2));
     const interpretationPoints = Number((interpretationCorrect * (4 / interpretation.length)).toFixed(2));
-    const automaticCodeTotal = Number((attempt.autoCodeScores || []).reduce((sum, value) => sum + Number(value || 0), 0).toFixed(2));
     const teacherCodeTotal = Object.values(attempt.teacherCodeScores || {}).reduce((sum, value) => sum + Number(value || 0), 0);
-    const codePoints = Number.isFinite(attempt.teacherScore) ? teacherCodeTotal : automaticCodeTotal;
-    const finalPoints = Number.isFinite(attempt.teacherScore) ? attempt.teacherScore : Number((abPoints + automaticCodeTotal).toFixed(2));
-    const finalStatus = finalPoints >= 7 ? "APROBADO" : "NO APROBADO";
+    const codePoints = Number.isFinite(attempt.teacherScore) ? teacherCodeTotal : null;
+    const finalPoints = Number.isFinite(attempt.teacherScore) ? attempt.teacherScore : abPoints;
+    const finalStatus = Number.isFinite(attempt.teacherScore) ? (finalPoints >= 7 ? "APROBADO" : "NO APROBADO") : "PENDIENTE DE CORRECCIÓN DOCENTE";
     root.innerHTML = `<h3>Corrección automática · Resultado de tu evaluación</h3>
       <div class="student-summary-counts">
         <div class="student-count count-correct"><strong>${correct}</strong><span>Correctas</span></div>
@@ -284,12 +283,12 @@
       <div class="student-section-scores">
         <div class="student-score-card"><span>Parte A · Teoría</span><strong>${formatScore(theoryPoints)} / 2</strong><small>${theoryCorrect} de ${theory.length} correctas</small></div>
         <div class="student-score-card"><span>Parte B · Interpretación</span><strong>${formatScore(interpretationPoints)} / 4</strong><small>${interpretationCorrect} de ${interpretation.length} correctas</small></div>
-        <div class="student-score-card"><span>Parte C · Código</span><strong>${formatScore(codePoints)} / 4</strong><small>Corrección por criterios</small></div>
-        <div class="student-score-card student-score-final"><span>PUNTAJE FINAL</span><strong>${formatScore(finalPoints)} / 10</strong><small>${finalStatus}</small></div>
+        <div class="student-score-card"><span>Parte C · Código</span><strong>${Number.isFinite(codePoints) ? `${formatScore(codePoints)} / 4` : "Pendiente / 4"}</strong><small>Evaluación a criterio del docente</small></div>
+        <div class="student-score-card student-score-final"><span>${Number.isFinite(attempt.teacherScore) ? "PUNTAJE FINAL" : "PUNTAJE PARCIAL"}</span><strong>${formatScore(finalPoints)} / ${Number.isFinite(attempt.teacherScore) ? "10" : "6"}</strong><small>${finalStatus}</small></div>
       </div>
-      <p class="student-summary-score">Puntaje A+B: <strong>${formatScore(abPoints)} / 6</strong>. ${Number.isFinite(attempt.teacherScore) ? "Nota definitiva con revisión docente." : "Nota automática calculada por respuestas y criterios de código. El docente puede revisar."}</p>
-      <details class="student-code-feedback"><summary>Ver corrección automática de los ejercicios de código</summary><ol>${(attempt.autoCodeFeedback || []).map((exercise, i) => `<li><strong>Ejercicio ${i + 1} · ${formatScore((attempt.autoCodeScores || [])[i] || 0)} / ${formatScore([1.33, 1.33, 1.34][i])}</strong><ul>${exercise.map(item => `<li class="code-criterion ${item.ok ? "criterion-correct" : "criterion-incorrect"}">${item.ok ? "✓ CORRECTO" : "✗ INCORRECTO"} · ${escapeHTML(item.label)} (${formatScore(item.points)} pts)</li>`).join("")}</ul></li>`).join("")}</ol></details>
-      <p class="learning-tip"><strong>Para mejorar:</strong> si tuviste errores en teoría, repasá conceptos y definiciones; si tuviste errores en interpretación, practicá la lectura paso a paso de fragmentos de código. La corrección automática de código brinda puntaje por criterios; el docente puede revisar y ajustar si corresponde.</p>
+      <p class="student-summary-score">Puntaje A+B: <strong>${formatScore(abPoints)} / 6</strong>. ${Number.isFinite(attempt.teacherScore) ? "Nota definitiva con revisión docente." : "Teoría e interpretación corregidas automáticamente. La nota final queda pendiente de la corrección docente del código."}</p>
+      <details class="student-code-feedback"><summary>Información sobre la corrección de código</summary><p>Los 3 ejercicios de código serán evaluados por el docente, quien asignará hasta 4 puntos según los criterios de resolución.</p></details>
+      <p class="learning-tip"><strong>Para mejorar:</strong> si tuviste errores en teoría, repasá conceptos y definiciones; si tuviste errores en interpretación, practicá la lectura paso a paso de fragmentos de código. Los ejercicios de código se califican a criterio del docente.</p>
       <details class="student-summary-details" open><summary>Ver detalle de las 30 preguntas</summary><div class="student-summary-list">${rows}</div></details>`;
   }
 
@@ -335,14 +334,12 @@
         $("gradeMessage").className = `grade-message ${approved ? "pass" : "fail"}`;
       }
     } else {
-      const autoCodeTotal = Number((attempt.autoCodeScores || []).reduce((sum, value) => sum + Number(value || 0), 0).toFixed(2));
-      const autoGrade = Number.isFinite(Number(attempt.autoGrade)) ? Number(attempt.autoGrade) : Number((calculateABPoints(savedAnswers) + autoCodeTotal).toFixed(2));
-      const passed = autoGrade >= 7;
-      if ($("score")) $("score").innerHTML = `${formatScore(autoGrade)}<small> / 10</small>`;
-      if ($("scoreText")) $("scoreText").textContent = `${identity ? identity + " | " : ""}Nota automática: ${formatScore(autoGrade)}/10. Teoría e interpretación: ${formatScore(calculateABPoints(savedAnswers))}/6. Código: ${formatScore(autoCodeTotal)}/4. Resultado: ${passed ? "APROBADO" : "NO APROBADO"}.`;
+      const abPartial = calculateABPoints(savedAnswers);
+      if ($("score")) $("score").innerHTML = `${formatScore(abPartial)}<small> / 6</small>`;
+      if ($("scoreText")) $("scoreText").textContent = `${identity ? identity + " | " : ""}Puntaje parcial automático: ${formatScore(abPartial)}/6. Teoría e interpretación corregidas automáticamente. Código: pendiente de corrección docente /4.`;
       if ($("gradeMessage")) {
-        $("gradeMessage").textContent = passed ? "Evaluación corregida automáticamente: APROBADO (7/10 o más). El docente puede revisar y ajustar la parte práctica." : "Evaluación corregida automáticamente: NO APROBADO (menos de 7/10). El docente puede revisar y ajustar la parte práctica.";
-        $("gradeMessage").className = `grade-message ${passed ? "pass" : "fail"}`;
+        $("gradeMessage").textContent = "Entrega registrada. La nota final y la aprobación quedan pendientes de la corrección docente de los ejercicios de código.";
+        $("gradeMessage").className = "grade-message";
       }
     }
     ["studentName", "studentLastName", "studentCourse"].forEach(id => { if ($(id)) $(id).disabled = true; });
@@ -432,35 +429,34 @@
       </li>`;
     }).join("");
     const abScore = calculateABPoints(attempt.answers);
-    const autoCodeResults = assessCodeAnswers(codeAnswersNow);
     const exercises = modelAnswers().map((model, index) => `
       <article class="ai-result">
         <h4>Ejercicio ${index + 1} · Código corregido de referencia</h4>
-        <p class="reference-note">Puntaje automático: <strong>${formatScore(autoCodeResults[index].score)} / ${formatScore(autoCodeResults[index].max)}</strong>. ${autoCodeResults[index].feedback.map(f => `${f.ok ? "✓" : "✗"} ${f.label}`).join(" · ")}.</p><p>Modelo de solución. El docente puede ajustar el puntaje si considera válida otra solución.</p>
+        <p class="reference-note">Puntaje asignado a criterio del docente. Máximo: <strong>${formatScore([1.33, 1.33, 1.34][index])} puntos</strong>.</p><p>Usá la solución de referencia como orientación. Evaluá el código del estudiante y asigná el puntaje que corresponda.</p>
         <pre class="reference-code"><code>${escapeHTML(model)}</code></pre>
         <p><strong>Código entregado por el estudiante:</strong></p>
         <pre><code>${escapeHTML(codeAnswersNow[`answer${index + 1}`] || "Sin responder")}</code></pre>
-        <label>Puntaje editable (automático como base; máximo según ejercicio)
-          <input class="teacher-code-score" data-index="${index + 1}" type="number" min="0" max="${index === 2 ? "1.34" : "1.33"}" step="0.01" value="${Number.isFinite(Number(savedCodeScores[`answer${index + 1}`])) ? Number(savedCodeScores[`answer${index + 1}`]) : 0}">
+        <label>Puntaje docente (máximo ${formatScore([1.33, 1.33, 1.34][index])})
+          <input class="teacher-code-score" data-index="${index + 1}" type="number" min="0" max="${index === 2 ? "1.34" : "1.33"}" step="0.01" placeholder="Ingresar puntaje" value="${savedCodeScores[`answer${index + 1}`] !== undefined && savedCodeScores[`answer${index + 1}`] !== null ? Number(savedCodeScores[`answer${index + 1}`]) : ""}
         </label>
       </article>`).join("");
     root.innerHTML = `<h3>Evaluación docente · ${correct}/30 respuestas correctas · A y B: ${abScore.toFixed(2).replace(".", ",")}/6 puntos</h3>
       <p>Las respuestas correctas aparecen en verde y las incorrectas en rojo. En cada pregunta se muestra la respuesta elegida, la respuesta correcta y una explicación.</p>
       <details open><summary>Corrección de respuestas · Partes A y B</summary><ol class="teacher-answer-list">${keys}</ol></details>
       <h3>Parte C · Corrección de código</h3>
-      <p>Teoría: 2 puntos repartidos entre las 15 preguntas. Interpretación: 4 puntos repartidos entre las 15 preguntas. Asigná hasta 1,33 puntos en los dos primeros ejercicios y 1,34 en el tercero (máximo 4 puntos). Total: 10 puntos.</p>${exercises}
+      <p>Teoría (2 puntos) e interpretación (4 puntos) se corrigen automáticamente. Los ejercicios de código (4 puntos) se califican manualmente a criterio docente: hasta 1,33 en cada uno de los dos primeros y 1,34 en el tercero. La aprobación es con 7 o más puntos sobre 10.</p>${exercises}
       <button id="saveTeacherGrade" class="primary" type="button">Guardar calificación docente</button>
       <p id="teacherGradeStatus" aria-live="polite"></p>`;
     $("saveTeacherGrade")?.addEventListener("click", () => {
       const scores = {};
       let valid = true;
       root.querySelectorAll(".teacher-code-score").forEach(input => {
-        const value = Number(input.value);
+        const value = input.value.trim() === "" ? NaN : Number(input.value);
         if (!Number.isFinite(value) || value < 0 || value > (Number(input.dataset.index) === 3 ? 1.34 : 1.33)) valid = false;
         scores[`answer${input.dataset.index}`] = value;
       });
       if (!valid) {
-        $("teacherGradeStatus").textContent = "Ingresá los puntajes permitidos: 1,33 en los dos primeros ejercicios y 1,34 en el tercero.";
+        $("teacherGradeStatus").textContent = "Ingresá un puntaje docente válido para cada ejercicio: máximo 1,33 en los dos primeros y 1,34 en el tercero. No dejes campos vacíos.";
         return;
       }
       const codeScore = Object.values(scores).reduce((sum, value) => sum + value, 0);
@@ -570,7 +566,7 @@
     const theoryScore = Number((allItems().slice(0, theory.length).filter(item => attempt.answers?.[item.id] === item.c).length * (2 / theory.length)).toFixed(2));
     const interpretationScore = Number((allItems().slice(theory.length).filter(item => attempt.answers?.[item.id] === item.c).length * (4 / interpretation.length)).toFixed(2));
     const codeBreakdown = [1, 2, 3].map(index => `Ej. ${index}: ${formatScore(attempt.teacherCodeScores?.[`answer${index}`] || 0)}/${index === 3 ? "1,34" : "1,33"}`).join(' · ');
-    const html = `<div class="individual-report"><h3>Informe individual</h3><p><strong>Estudiante:</strong> ${escapeHTML(student.name || '')} ${escapeHTML(student.lastName || '')}</p><p><strong>Curso:</strong> ${escapeHTML(student.course || '—')}</p><p><strong>Fecha:</strong> ${escapeHTML(new Date(attempt.date).toLocaleString('es-AR'))}</p><div class="report-score">${score === null ? 'Pendiente de calificación' : `${formatScore(score)} / 10 · ${score >= 7 ? 'Aprobado' : 'No aprobado'} · ${performanceLabel(score)}`}</div><p>Parte A – Teoría: ${formatScore(theoryScore)}/2. Parte B – Interpretación: ${formatScore(interpretationScore)}/4. Parte C – Código: ${formatScore(code)}/4.</p><p><strong>Detalle de código:</strong> ${codeBreakdown}</p><p><strong>Respuestas correctas:</strong> ${correct}/30.</p><p><strong>Diagnóstico:</strong> ${correct < 15 ? 'Necesita reforzar conceptos básicos y lectura de código.' : correct < 24 ? 'Buen avance; conviene practicar los temas donde hubo errores.' : 'Buen dominio de teoría e interpretación; reforzar la resolución práctica si corresponde.'}</p><div class="report-actions"><button class="secondary" type="button" id="printIndividualReport">Imprimir / Guardar PDF</button><button class="secondary" type="button" id="closeIndividualReport">Cerrar informe</button></div></div>`;
+    const html = `<div class="individual-report"><h3>Informe individual</h3><p><strong>Estudiante:</strong> ${escapeHTML(student.name || '')} ${escapeHTML(student.lastName || '')}</p><p><strong>Curso:</strong> ${escapeHTML(student.course || '—')}</p><p><strong>Fecha:</strong> ${escapeHTML(new Date(attempt.date).toLocaleString('es-AR'))}</p><div class="report-score">${score === null ? 'Pendiente de calificación' : `${formatScore(score)} / 10 · ${score >= 7 ? 'Aprobado' : 'No aprobado'} · ${performanceLabel(score)}`}</div><p>Parte A – Teoría: ${formatScore(theoryScore)}/2. Parte B – Interpretación: ${formatScore(interpretationScore)}/4. Parte C – Código: ${Number.isFinite(attempt.teacherScore) ? `${formatScore(code)}/4` : "Pendiente de corrección docente /4"}.</p><p><strong>Detalle de código:</strong> ${codeBreakdown}</p><p><strong>Respuestas correctas:</strong> ${correct}/30.</p><p><strong>Diagnóstico:</strong> ${correct < 15 ? 'Necesita reforzar conceptos básicos y lectura de código.' : correct < 24 ? 'Buen avance; conviene practicar los temas donde hubo errores.' : 'Buen dominio de teoría e interpretación; reforzar la resolución práctica si corresponde.'}</p><div class="report-actions"><button class="secondary" type="button" id="printIndividualReport">Imprimir / Guardar PDF</button><button class="secondary" type="button" id="closeIndividualReport">Cerrar informe</button></div></div>`;
     const existing = $('individualReport');
     if (existing) existing.remove();
     const wrapper = document.createElement('div');
@@ -594,7 +590,7 @@
     const header = ['Apellido', 'Nombre', 'Curso', 'Fecha', 'Teoria / 2', 'Interpretacion / 4', 'Codigo / 4', 'Nota / 10', 'Estado'];
     const rows = history.map(item => {
       const ab = calculateABPoints(item.answers || {});
-      const code = Object.values(item.teacherCodeScores || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+      const code = Number.isFinite(item.teacherScore) ? Object.values(item.teacherCodeScores || {}).reduce((sum, value) => sum + Number(value || 0), 0) : 'Pendiente';
       const grade = Number.isFinite(item.teacherScore) ? item.teacherScore : '';
       return [item.student?.lastName, item.student?.name, item.student?.course, new Date(item.date).toLocaleString('es-AR'), calculateABPoints(Object.fromEntries(allItems().slice(0, theory.length).map(q => [q.id, item.answers?.[q.id]]))), ab - calculateABPoints(Object.fromEntries(allItems().slice(0, theory.length).map(q => [q.id, item.answers?.[q.id]]))), code, grade, grade === '' ? 'Pendiente' : grade >= 7 ? 'Aprobado' : 'No aprobado'].map(csvCell).join(';');
     });
@@ -606,7 +602,7 @@
   function printDashboard(history) {
     const rows = history.map(item => {
       const ab = calculateABPoints(item.answers || {});
-      const code = Object.values(item.teacherCodeScores || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+      const code = Number.isFinite(item.teacherScore) ? formatScore(Object.values(item.teacherCodeScores || {}).reduce((sum, value) => sum + Number(value || 0), 0)) : 'Pendiente';
       const score = Number.isFinite(item.teacherScore) ? formatScore(item.teacherScore) : 'Pendiente';
       return `<tr><td>${escapeHTML(item.student?.lastName || '')}, ${escapeHTML(item.student?.name || '')}</td><td>${escapeHTML(item.student?.course || '')}</td><td>${new Date(item.date).toLocaleDateString('es-AR')}</td><td>${formatScore(ab)}</td><td>${formatScore(code)}</td><td>${score}</td><td>${Number.isFinite(item.teacherScore) ? (item.teacherScore >= 7 ? 'Aprobado' : 'No aprobado') : 'Pendiente'}</td></tr>`;
     }).join('');
@@ -805,7 +801,7 @@
 
       if ($("score")) $("score").innerHTML = `—<small> / 10</small>`;
       if ($("scoreText")) $("scoreText").textContent =
-        "Respondé las 30 preguntas y completá los 3 ejercicios. La nota es sobre 10 puntos: teoría 2, interpretación 4 y código 4. Se aprueba con 7/10 (70%).";
+        "Respondé las 30 preguntas y completá los 3 ejercicios. Teoría (2) e interpretación (4) se corrigen automáticamente. Código (4) queda a criterio del docente. Se aprueba con 7 o más sobre 10.";
       if ($("gradeMessage")) {
         $("gradeMessage").textContent = "Nuevo intento habilitado. Ingresá nuevamente tus datos y comenzá la evaluación.";
         $("gradeMessage").className = "grade-message";
@@ -1000,7 +996,7 @@
       restoreDraft();
       examLocked = false;
       if ($("score")) $("score").innerHTML = `—<small> / 10</small>`;
-      if ($("scoreText")) $("scoreText").textContent = `Respondé las 30 preguntas y completá los 3 ejercicios. La nota es sobre 10 puntos: teoría 2, interpretación 4 y código 4. Se aprueba con 7/10 (70%).`;
+      if ($("scoreText")) $("scoreText").textContent = `Respondé las 30 preguntas y completá los 3 ejercicios. Teoría (2) e interpretación (4) se corrigen automáticamente. Código (4) queda a criterio del docente. Se aprueba con 7 o más sobre 10.`;
       if ($("gradeMessage")) $("gradeMessage").textContent = "Completá tus datos personales. Al entregar, el docente podrá consultar la clave y evaluar tus respuestas.";
     }
   }
