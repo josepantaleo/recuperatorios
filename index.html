@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Coloquio modelo interactivo de JavaScript - IPEM 146">
+  <title>Coloquio Modelo | IPEM 146</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="brand">I.P.E.M. Nº 146 · Formación Profesional</div>
+    <h1>Recuperatorio de JavaScript</h1>
+    <div class="aviso-examen">
+  <h2>⚠️ RECUPERATORIO · EVALUACIÓN DE PRÁCTICA</h2>
+  <p>ES UN MODELO DE EVALUACIÓN PARA PRACTICAR</p>
+</div>
+  </header>
+
+  <main class="container">
+    <section class="student-data panel" aria-labelledby="studentTitle">
+      <div><span class="eyebrow">IDENTIFICACIÓN</span><h2 id="studentTitle">Datos del estudiante</h2><p>Completá tus datos. El sistema guardará tu avance en este dispositivo para que puedas continuar si cerrás la página.</p></div>
+      <div class="student-fields">
+        <label>Nombre<input id="studentName" name="studentName" type="text" maxlength="60" autocomplete="given-name" required></label>
+        <label>Apellido<input id="studentLastName" name="studentLastName" type="text" maxlength="60" autocomplete="family-name" required></label>
+        <label>Curso<input id="studentCourse" name="studentCourse" type="text" maxlength="30" placeholder="Ej.: 5° A - Informática" required></label>
+      </div>
+    </section>
+    <section class="intro panel">
+      <div>
+        <h2>Prepará tu evaluación</h2>
+        <p>El recuperatorio tiene 33 actividades: 15 teóricas, 15 de interpretación y 3 ejercicios de corrección de código. Las preguntas y sus opciones se presentan en orden aleatorio para cada nuevo intento; el orden se conserva si se cierra y vuelve a abrir la página. La parte A suma 2 puntos, la parte B suma 4 puntos y la parte C suma 4 puntos (1,33 puntos en los dos primeros y 1,34 en el tercero). Total: 10 puntos. Se aprueba con 7/10 (70%).</p>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>Progreso</span><strong id="progressText">0 de 33</strong></div>
+        <div class="progress"><div id="progressBar"></div></div>
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="Partes del coloquio">
+      <button class="tab active" data-target="teoria">A · Teórico</button>
+      <button class="tab" data-target="interpretacion">B · Interpretación</button>
+      <button class="tab" data-target="errores">C · Corrección de código</button>
+    </nav>
+
+    <section id="teoria" class="section active">
+      <div class="section-heading"><span class="eyebrow">PARTE A · 15 PREGUNTAS</span><h2>Conocimientos teóricos</h2><p>Seleccioná una sola respuesta por pregunta.</p></div>
+      <div id="theoryQuestions"></div>
+    </section>
+
+    <section id="interpretacion" class="section">
+      <div class="section-heading"><span class="eyebrow">PARTE B · 15 PREGUNTAS</span><h2>Interpretación de código</h2><p>Analizá cada fragmento y elegí la respuesta correcta.</p></div>
+      <div class="code-card">
+        <div class="code-title">Programa de productos</div>
+        <pre><code>const productos = [
+  { nombre: "Cuaderno", precio: 2500, stock: 4 },
+  { nombre: "Lapicera", precio: 800, stock: 0 },
+  { nombre: "Mochila", precio: 18000, stock: 2 },
+  { nombre: "Regla", precio: 1200, stock: 5 }
+];
+
+const disponibles = productos.filter(producto => producto.stock > 0);
+const nombres = disponibles.map(producto => producto.nombre);
+const productoBuscado = productos.find(producto => producto.nombre === "Mochila");
+
+console.log("Disponibles:", nombres);
+console.log("Producto buscado:", productoBuscado);
+console.log("Cantidad de productos:", productos.length);</code></pre>
+      </div>
+      <div id="interpretQuestions"></div>
+    </section>
+
+    <section id="errores" class="section">
+      <div class="section-heading">
+        <span class="eyebrow">PARTE C · 3 EJERCICIOS</span>
+        <h2>Corrección de código</h2>
+        <p>Detectá los errores y escribí el código corregido. No se permite copiar, cortar, pegar ni arrastrar texto en los editores. El sistema corregirá automáticamente por criterios y asignará hasta 1,33 puntos en los dos primeros y 1,34 en el tercero. El docente podrá revisar el puntaje. La evaluación completa suma 10 puntos.</p>
+      </div>
+
+      <article class="exercise panel">
+        <h3>Ejercicio 1 · Variables, operadores y descuento</h3>
+        <p class="muted">Calculá el precio de 2 artículos de $2400, aplicando un descuento del 10%. Corregí los errores.</p>
+        <pre><code>const precio = "2400";
+const cantidad = 2;
+const subtotal = precio + cantidad;
+const descuento = subtotal * 10;
+const total = subtotal - descuento;
+console.log(total);</code></pre>
+        <textarea id="answer1" class="code-answer" rows="7" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Escribí el código corregido..."></textarea>
+      </article>
+      <article class="exercise panel">
+        <h3>Ejercicio 2 · Funciones y condicionales</h3>
+        <p class="muted">La función debe calcular el promedio de cuatro notas y mostrar "Aprobado" si es 6 o más. Corregí los errores.</p>
+        <pre><code>function calcularPromedio(n1, n2, n3, n4) {
+  const promedio = n1 + n2 + n3 + n4 / 4;
+  if (promedio > 6) {
+    console.log("Aprobado");
+  } else {
+    console.log("Desaprobado");
+  }
+}
+calcularPromedio(7, 5, 8, 6);</code></pre>
+        <textarea id="answer2" class="code-answer" rows="7" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Escribí la función corregida..."></textarea>
+      </article>
+      <article class="exercise panel">
+        <h3>Ejercicio 3 · Arrays, ciclos y contadores</h3>
+        <p class="muted">Recorré el array, mostrá las temperaturas de 20 grados o más y contá cuántas cumplen. Corregí los errores.</p>
+        <pre><code>const temperaturas = [18, 24, 15, 30, 20];
+let cantidad = 0;
+for (let i = 0; i <= temperaturas.length; i++) {
+  if (temperaturas[i] > 20) {
+    console.log(temperaturas[i]);
+    cantidad++;
+  }
+}
+console.log("Cantidad:", cantidad);</code></pre>
+        <textarea id="answer3" class="code-answer" rows="7" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Escribí el código corregido..."></textarea>
+      </article>
+
+    </section>
+
+    <div class="finalize-exam panel">
+      <div>
+        <h2>¿Terminaste de responder?</h2>
+        <p>Cuando estés listo, finalizá la evaluación. Se marcarán en verde las respuestas correctas, en rojo las incorrectas y se mostrará el puntaje de cada parte y el total.</p>
+      </div>
+      <button id="gradeBtn" class="primary finalize-button" type="button">Finalizar y corregir</button>
+    </div>
+
+    <section class="finish panel">
+      <div><span class="eyebrow">RESULTADO</span><h2>Tu evaluación</h2><p id="scoreText">La evaluación suma 10 puntos: teoría 2, interpretación 4 y código 4. Se aprueba con 7/10 (70%).</p></div>
+      <div class="score" id="score">—<small> / 10</small></div>
+      <div class="finish-actions">
+        <button id="resetBtn" class="secondary" type="button" hidden>Reiniciar</button>
+        <button id="teacherReviewBtn" class="secondary" type="button" hidden>Abrir evaluación docente</button>
+      </div>
+      <p id="gradeMessage" class="grade-message" aria-live="polite"></p>
+      <p id="storageStatus" class="delete-status" aria-live="polite">Guardado automático en este dispositivo.</p>
+      <div id="studentSummary" class="student-summary" aria-live="polite"></div>
+      <div id="teacherReview" class="ai-feedback" aria-live="polite"></div>
+    </section>
+
+    <section class="teacher-tools panel">
+      <div><h2>Administración docente</h2><p>Elimina el intento y el borrador activos de este navegador para habilitar una nueva evaluación. El historial docente se conserva. Los datos no se sincronizan entre dispositivos. La contraseña es una barrera de interfaz; para seguridad real se necesita validación en un servidor.</p></div>
+      <div class="teacher-tool-actions"><button id="teacherDashboardBtn" class="secondary" type="button">Abrir panel de resultados</button><button id="deleteSavedBtn" class="danger" type="button">Eliminar intento activo y habilitar nuevo</button></div>
+      <p id="deleteStatus" class="delete-status" aria-live="polite"></p>
+    </section>
+
+    <footer>Recuperatorio de JavaScript · Formación Profesional en Diseño Web · IPEM 146</footer>
+  </main>
+  <dialog id="teacherPasswordDialog" class="password-dialog" aria-labelledby="teacherPasswordTitle">
+    <form id="teacherPasswordForm" method="dialog">
+      <h2 id="teacherPasswordTitle">Acceso docente</h2>
+      <label for="teacherPasswordInput">Contraseña</label>
+      <input id="teacherPasswordInput" type="password" autocomplete="current-password" required>
+      <div class="password-actions">
+        <button type="button" class="secondary" onclick="document.getElementById('teacherPasswordDialog').close()">Cancelar</button>
+        <button type="submit" class="primary">Aceptar</button>
+      </div>
+    </form>
+  </dialog>
+  <script src="app.js"></script>
+</body>
+</html>
